@@ -24,6 +24,7 @@ cp config-example.yaml config.yaml
 ```
 python3 weight.py
 ```
+![Example weight graph](https://github.com/oxfordfun/getfit/blob/master/example.png)
 
 ## Monitor your data
 - Modify config.yaml for yourself
