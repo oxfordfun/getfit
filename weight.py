@@ -74,7 +74,46 @@ def polyfit_data(data, graph_start_date, graph_end_date, ):
     polyfit_date =  np.linspace(start_date, end_date, 100)
 
     return p4, polyfit_date
+
+def add_legend(ax3, weight_upper, weight_lower):
+    ax3.yaxis.set_label_position('left')
+    ax3.yaxis.set_ticks_position('left')
+    ax3.set_ylabel('weight [lbs/kg]')
+    ax3.spines["left"].set_position(("axes", -0.055))
+    ax3.set_ylim(kg_to_lbs(weight_lower), kg_to_lbs(weight_upper))
+
+def add_changes(ax4, dates, data):
+    ax4.set_ylabel("change per day [kg]")
+    ax4.yaxis.set_label_position('right')
+    ax4.yaxis.set_ticks_position('right')
+    ax4.spines["right"].set_position(("axes", 1.08))
+    ax4.set_ylim(-0.5,0.5)
+    changes = []
+    days_length = []
+    dd = mdates.date2num(dates)
+    for i, d in enumerate(data):
+        if i == 0:
+            changes.append(0)
+            days_length.append(0)
+        else:
+            date = d[0]
+            weight = float(d[1])
+            prev_date = data[i - 1][0]
+            prev_weight = float(data[i - 1][1])
+            days = float((date - prev_date).days)
+            change = (weight - prev_weight) / days
+            print(change, days)
+            changes.append((weight - prev_weight) / days)
+            days_length.append(dd[i - 1] - dd[i])
+    ax4.bar(dates, changes, align = 'edge', linewidth = 0, width = days_length, alpha = 0.3, color = 'black')
+
     
+def add_patches(ax2, x_date):
+    ax2.add_patch(Rectangle((x_date[0], 30),   x_date[-1], 50.0, facecolor="red",       alpha=0.2))
+    ax2.add_patch(Rectangle((x_date[0], 25),   x_date[-1], 5.0,  facecolor="yellow",    alpha=0.2))
+    ax2.add_patch(Rectangle((x_date[0], 18.5), x_date[-1], 6.5,  facecolor="green",     alpha=0.2))
+    ax2.add_patch(Rectangle((x_date[0], 16),   x_date[-1], 2.5,  facecolor="steelblue", alpha=0.2))
+    ax2.add_patch(Rectangle((x_date[0], 0),    x_date[-1], 16,   facecolor="blue",      alpha=0.2))
 
 def plot_stuff(filename, age, height, is_male, weight_upper, weight_lower, graph_start_date, graph_end_date, lines, polyfit, show_deltas):
     data = get_weight_from_csv_file(filename)
@@ -85,7 +124,7 @@ def plot_stuff(filename, age, height, is_male, weight_upper, weight_lower, graph
     dates = [record[0] for record in data]
     y     = [record[1] for record in data]
 
-    x = mdates.date2num(dates)
+    x_date = mdates.date2num(dates)
 
     fig, host = plt.subplots()
     
@@ -94,6 +133,8 @@ def plot_stuff(filename, age, height, is_male, weight_upper, weight_lower, graph
     formatter = DateFormatter('%b-%d')
     plt.gcf().axes[0].xaxis.set_major_formatter(formatter)  
     ax2 = host.twinx()
+    ax3 = host.twinx()
+    ax4 = host.twinx()
 
     host.grid()
     host.set_ylim(weight_lower, weight_upper)
@@ -107,10 +148,18 @@ def plot_stuff(filename, age, height, is_male, weight_upper, weight_lower, graph
     ax2.set_ylabel("body mass index")
     ax2.set_ylim(bmi_lower, bmi_upper)
 
-
     for line in lines:
         ax2.plot([line[0], line[2]], [line[1], line[3]], color='red', linestyle='-', linewidth=1)
 
+    # add patches
+    add_patches(ax2, x_date)
+
+    # add legend
+    add_legend(ax3, weight_upper, weight_lower)
+
+    # add changes
+    if show_deltas:
+        add_changes(ax4, dates, data)    
 
     plt.show()
 
