@@ -24,7 +24,7 @@ def bmi_from_weight(weight, height):
 def get_weight_from_csv_file(filename):
     data = []
 
-    with open('weight.csv') as weight_file:
+    with open(filename) as weight_file:
         weight_reader = csv.reader(weight_file)
 
         for row in weight_reader:
@@ -55,11 +55,11 @@ def estimate_bfp(bmi, age, is_male):
     else:
         return 1.20 * bmi + 0.23 * age + 5.4
 
-def polyfit_data(data, graph_start_date, graph_end_date, ):
+def polyfit_data(data,  start_date,  end_date, ):
     polyfit_dates = []
     polyfit_weights = []
     for dat in data:
-        if dat[0] >= graph_start_date:
+        if dat[0] >=  start_date:
             polyfit_dates.append(dat[0])
             polyfit_weights.append(dat[1])
     polyfit_x = mdates.date2num(polyfit_dates)
@@ -69,8 +69,8 @@ def polyfit_data(data, graph_start_date, graph_end_date, ):
     xx = np.linspace(polyfit_x.min(), polyfit_x.max(), 100)
     dd = mdates.num2date(xx)
 
-    start_date = mdates.date2num(graph_start_date)
-    end_date = mdates.date2num(graph_end_date)
+    start_date = mdates.date2num( start_date)
+    end_date = mdates.date2num( end_date)
     polyfit_date =  np.linspace(start_date, end_date, 100)
 
     return p4, polyfit_date
@@ -115,7 +115,7 @@ def add_patches(ax2, x_date):
     ax2.add_patch(Rectangle((x_date[0], 16),   x_date[-1], 2.5,  facecolor="steelblue", alpha=0.2))
     ax2.add_patch(Rectangle((x_date[0], 0),    x_date[-1], 16,   facecolor="blue",      alpha=0.2))
 
-def plot_stuff(filename, age, height, is_male, weight_upper, weight_lower, graph_start_date, graph_end_date, lines, polyfit, show_deltas):
+def plot_stuff(filename, age, height, is_male, weight_upper, weight_lower,  start_date,  end_date, lines, polyfit, show_deltas):
     data = get_weight_from_csv_file(filename)
 
     bmi_lower = bmi_from_weight(weight_lower, height)
@@ -138,11 +138,11 @@ def plot_stuff(filename, age, height, is_male, weight_upper, weight_lower, graph
 
     host.grid()
     host.set_ylim(weight_lower, weight_upper)
-    host.set_xlim(graph_start_date, graph_end_date)
+    host.set_xlim( start_date,  end_date)
     host.plot(dates, y, '-', linewidth=3, color='black')
 
     if polyfit:
-        p4, polyfit_date = polyfit_data(data, graph_start_date, graph_end_date)
+        p4, polyfit_date = polyfit_data(data, start_date,  end_date)
         host.plot(polyfit_date, p4(polyfit_date), 'blue')
     # bmi axis
     ax2.set_ylabel("body mass index")
@@ -163,21 +163,31 @@ def plot_stuff(filename, age, height, is_male, weight_upper, weight_lower, graph
 
     plt.show()
 
-def main():
-    _height = 1.80
-    plot_stuff(filename = 'weight.csv',
+def main(config):
+    print(config['file'])
+    day_from = DT.datetime(config['start_date']['year'],  config['start_date']['month'], config['start_date']['day'])
+    day_to = DT.datetime(config['end_date']['year'],  config['end_date']['month'], config['end_date']['day'])
+    current_weight = config['current_weight']
+    target_weight = config['target_weight']
+    _height = config['height']
+    plot_stuff(filename = config['file'],
            age = -1,
            height = _height,
-           is_male = True,
-           weight_upper = 115.0,
-           weight_lower = 70.0,
-           graph_start_date = DT.datetime(2020,  7, 14),
-           graph_end_date   = DT.datetime(2021, 3, 14),
-           lines = [[DT.datetime(2020, 7, 14), bmi_from_weight(112.6, _height),
-                     DT.datetime(2021, 3, 14), bmi_from_weight(72.6, _height)]
+           is_male = config['is_male'],
+           weight_upper = config['weight_upper'],
+           weight_lower = config['weight_lower'],
+           start_date = day_from,
+           end_date   = day_to,
+           lines = [[day_from, bmi_from_weight(current_weight, _height),
+                     day_to, bmi_from_weight(target_weight, _height)]
                    ],
-           polyfit = True,
-           show_deltas = True)
+           polyfit = config['polyfit'],
+           show_deltas = config['show_deltas'])
 
 if __name__ == '__main__':
-    main()
+    import yaml
+    with open('config.yaml') as f:
+        config = yaml.load(f, Loader=yaml.FullLoader)
+        for key, value in config.items():
+            print (key + " : " + str(value))
+    main(config)

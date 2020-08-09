@@ -1,0 +1,17 @@
+file: 'weight.csv'
+height: 1.80
+is_male: false
+weight_upper: 90.0
+weight_lower: 70.0
+start_date: 
+    year: 2018
+    month: 1
+    day: 25
+end_date:
+    year: 2018
+    month: 6
+    day: 25
+current_weight: 85.0
+target_weight: 70.8
+polyfit: true
+show_deltas: true
