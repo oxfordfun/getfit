@@ -55,6 +55,27 @@ def estimate_bfp(bmi, age, is_male):
     else:
         return 1.20 * bmi + 0.23 * age + 5.4
 
+def polyfit_data(data, graph_start_date, graph_end_date, ):
+    polyfit_dates = []
+    polyfit_weights = []
+    for dat in data:
+        if dat[0] >= graph_start_date:
+            polyfit_dates.append(dat[0])
+            polyfit_weights.append(dat[1])
+    polyfit_x = mdates.date2num(polyfit_dates)
+
+    z4 = np.polyfit(polyfit_x, polyfit_weights, 1)
+    p4 = np.poly1d(z4)
+    xx = np.linspace(polyfit_x.min(), polyfit_x.max(), 100)
+    dd = mdates.num2date(xx)
+
+    start_date = mdates.date2num(graph_start_date)
+    end_date = mdates.date2num(graph_end_date)
+    polyfit_date =  np.linspace(start_date, end_date, 100)
+
+    return p4, polyfit_date
+    
+
 def plot_stuff(filename, age, height, is_male, weight_upper, weight_lower, graph_start_date, graph_end_date, lines, polyfit, show_deltas):
     data = get_weight_from_csv_file(filename)
 
@@ -80,26 +101,8 @@ def plot_stuff(filename, age, height, is_male, weight_upper, weight_lower, graph
     host.plot(dates, y, '-', linewidth=3, color='black')
 
     if polyfit:
-        polyfit_dates = []
-        polyfit_weights = []
-        for dat in data:
-            if dat[0] >= lines[0][0]:
-                polyfit_dates.append(dat[0])
-                polyfit_weights.append(dat[1])
-        polyfit_x = mdates.date2num(polyfit_dates)
-
-        z4 = np.polyfit(polyfit_x, polyfit_weights, 1)
-        p4 = np.poly1d(z4)
-        xx = np.linspace(polyfit_x.min(), polyfit_x.max(), 100)
-        dd = mdates.num2date(xx)
-        host.plot(dd, p4(xx), '-g')
-
-        start_date = mdates.date2num(graph_start_date)
-        end_date = mdates.date2num(graph_end_date)
-        polyfit_date =  np.linspace(start_date, end_date, 100)
-
+        p4, polyfit_date = polyfit_data(data, graph_start_date, graph_end_date)
         host.plot(polyfit_date, p4(polyfit_date), 'blue')
-
     # bmi axis
     ax2.set_ylabel("body mass index")
     ax2.set_ylim(bmi_lower, bmi_upper)
